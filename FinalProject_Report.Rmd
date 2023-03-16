@@ -1,0 +1,703 @@
+---
+title: "Instructional Stata Datasets for Econometrics Project"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 5
+    number_sections: yes
+    highlight: pygments
+    extra_dependencies:
+    - tikz
+
+author: "20125099 - Hoang Thi Minh Khue"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, comment = '')
+```
+# Introduction
+
+## About data
+
+The data set consists of 935 rows and 7 columns, including: wage, hours, IQ, exper, married, black, south  
+
+## Format and structure of the data set
+
+| Order | Properties | Meaning                                     |
+|-------|------------|---------------------------------------------|
+| 1     | wage       | Monthly earnings                            |
+| 2     | hours      | Average weekly hours                        |
+| 3     | IQ         | IQ score                                    |
+| 4     | exper      | Years of work experience                    |
+| 5     | married    | =1 if married                               |
+| 6     | black      | =1 if black                                 |
+| 7     | south      | =1 if live in south                         |
+
+Load some important libraries.
+
+```{r, results = FALSE}
+library(magrittr) # needs to be run every time you start R and want to use %>%
+library(dplyr)    # alternatively, this also loads %>%
+library("readxl")
+library(ggplot2)
+library(dplyr)
+library(extrafont)
+library(moments)
+library(epiDisplay)
+library(GGally)
+```
+
+First, let's load data from the smoke dataset
+
+```{r}
+# Loading
+setwd("C:/HCMUS/Final_Project")
+
+# xls files
+Data <- read_excel("wage2.xls")
+attach(Data)
+
+save(Data,file="data.rda")
+load("data.rda")
+
+```
+
+Below a preview of this dataset and its structure:
+
+```{r}
+# first 6 observations
+head(Data)
+```
+
+```{r}
+# structure of dataset
+str(Data)
+```
+
+The dataset contains 935 observations and 7 variables, representing the monthly salary of Americans with information such as number of hours worked, IQ score, years of work experience, married or not, black and living in the South of the United States. 
+
+Using the summary function of R to get the following basic and frequency descriptive statistics about the dataset, we examine all the computed columns in the dataset. For numeric property types, the function will return 5 values: 
+
+- Minimum value (Min)
+
+- First quartile (1st Qu)
+
+- Median, Third quartile (3rd Qu)
+
+- Maximum value (Max).
+
+```{r}
+names(Data) <- c("wage","hours","IQ", "exper", "married", "black", "south")
+
+Data$married <- factor(Data$married)
+levels(Data$married) <- c("valua 0 (Unmarried)", "Valua 1(Married)")
+
+Data$black <- factor(Data$black)
+levels(Data$black) <- c("valua 0 (Other)", "Valua 1(Black)")
+
+Data$south <- factor(Data$south)
+levels(Data$south) <- c("valua 0 (Other)", "Valua 1(South)")
+
+summary(Data)
+```
+
+# Univariate Analysis
+
+## 'wage' attribute (Quantitative)
+
+- The wage attribute is a quantitative variable, so we will draw a bar chart to observe the values of the variable. The barplot command is used to do this. Notice that before that we need to tabulate the value of the wage variable using the table command. The specific command is recorded as follows.
+
+```{r}
+barplot(table(Data$wage))
+```
+
+- The values of the wage variable are presented as shown in the figure. However, the columns are still discrete and do not have clear properties, so we need to qualify the wage attribute by using histogram with the breaks parameters being the sequence of data cut point corresponding to each cut interval. The full command is shown below.
+
+```{r}
+ggplot(Data, aes(x = wage)) + 
+  scale_x_continuous(breaks = seq(0, 3000, 300)) +
+  geom_histogram(binwidth = 300, color="black", fill="lightblue") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = 'none')
+
+```
+
+Looking at the histogram, we can see that the monthly salary of the American people (surveyed) is most distributed in the range of 600 to 900 USD and 901 to 1200 USD and decrease on both sides.
+
+## 'hours' attribute (Quantitative)
+
+- Similar to the wage property, for hours we still use the barplot and histogram functions to draw the graph.
+
+```{r}
+barplot(table(hours))
+```
+
+- When plotting the column chart directly in the hours variable, we have a similar case as above, that is, the properties of the attribute cannot be clearly seen. Therefore, we need to cut the interval and make a histogram on the qualitative data. 
+
+```{r}
+
+Cut <- cut(hours, breaks=4)
+
+ggplot(Data, aes(x = Cut)) + 
+  geom_histogram(stat= "count", aes(fill = ..count..), color="black", fill="lightblue") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = 'none')
+```
+
+After drawing the graph, it is easy to see that the people surveyed mainly work 36 to 50 hours a week.
+
+- Sketch the scatter plots between monthly earnings and average weekly working hours of Americans surveyed.
+
+```{r}
+ggplot(Data, aes(x=hours, y=wage)) + 
+  geom_point(color="deepskyblue4") 
+```
+
+The data points are spread out in this graph. This means there is no trend to the data; thus, there is no clear correlation between wage and hours.
+
+## 'IQ' attribute (Quantitative)
+
+- For the quantitative variable IQ, we have the same approach as the two properties above.
+
+```{r}
+barplot(table(IQ))
+```
+
+- To make it easier to see, we should qualitatively the data using the cut command.
+
+```{r}
+
+Cut <- cut(IQ, breaks=19)
+
+ggplot(Data, aes(x = Cut)) + 
+  geom_histogram(stat= "count", aes(fill = ..count..), color="black", fill="lightblue") +
+  theme_minimal() +
+  scale_x_discrete(guide = guide_axis(n.dodge=3))
+```
+
+In this chart, we can see that the popular IQ scores among surveyed Americans ranged from 96 to 110.
+
+- Sketch the scatter plots between monthly earnings and IQ score of Americans surveyed.
+
+```{r}
+ggplot(Data, aes(x=IQ, y=wage)) + geom_point(color="deepskyblue4")
+```
+
+As IQ score increase, wage increase. In other words, smarter people get paid more.
+
+## 'exper' attribute (Quantitative)
+
+- For the quantitative variable exper, we first use the barplot
+
+```{r}
+barplot(table(exper))
+```
+
+The graph shows that the survey was spread across most people with varying levels of experience. However, mainly focus on 8 - 16 years of experience.
+
+- Sketch the scatter plots between monthly earnings and Years of work experience of Americans surveyed.
+
+```{r}
+ggplot(Data, aes(x=exper, y=wage)) + geom_point(color="deepskyblue4")
+```
+
+As same as in hours attribute, the data points are spread out in this graph. This means there is no trend to the data; thus, there is no clear correlation between wage and exper.
+
+## 'married' attribute (Qualitative)
+
+- Since married is a qualitative variable, for easy observation, we can draw a pie chart to observe the property's properties. To sketch a pie chart in R, we need to use the pie command and pass in a table of values (can use the table function and pass in the data column as we did in the previous sections). The details of the command are as follows:
+
+```{r}
+pie(table(married))
+```
+
+With 1 representing the married and 0 representing the unmarried, the graph shows that among the Americans surveyed, the number of people getting married is much larger than the rest.
+
+- Plot a box graph showing the salaries of two groups of married and unmarried subjects.
+
+```{r}
+ggplot(Data, aes(x = wage, y = married, fill = married)) +
+    geom_boxplot() +
+    coord_flip() +
+    ggtitle('Box Plot showing the salaries of two groups of married and unmarried') +
+    xlab('Wage') +
+    ylab('Case') +
+    scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Unmarried', 'Married')) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+- We also plot the salary histogram of the two objects.
+
+```{r}
+ggplot(Data,aes(x=wage, fill = married)) +
+  geom_histogram(aes(y = ..density..), color = "grey17") +
+  geom_density(alpha = .2, fill = "yellow") +
+  facet_wrap(~married,ncol = 1,scale = "fixed")+
+  xlab("Wage") +
+  ylab("Density") +
+  scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Unmarried', 'Married')) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Comment**
+
+- The median of wage of married people tends to higher than unmarried one.
+
+- The monthly salary of the married group appears to be evenly distributed while the unmarried group has a right skewed distribution.
+
+
+## 'black' attribute (Qualitative)
+
+- The way to draw a pie chart is similar to the one above.
+
+```{r}
+pie(table(black))
+```
+
+The 1 on the chart represents the blacks and the 0 represents the rest. Through the chart, it is easy to see that black people make up only a small part of the population surveyed.
+
+- Plot a box graph showing the salaries of two groups of black and non-black people.
+
+```{r}
+ggplot(Data, aes(x = wage, y = black, fill = black)) +
+    geom_boxplot() +
+    coord_flip() +
+    ggtitle('Box Plot showing the salaries of two groups of blacks and non-blacks') +
+    xlab('Wage') +
+    ylab('Case') +
+    scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Other', 'Black')) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+- We also plot the salary histogram of the two objects.
+
+```{r}
+ggplot(Data,aes(x=wage, fill = black)) +
+  geom_histogram(aes(y = ..density..), color = "grey17") +
+  geom_density(alpha = .2, fill = "yellow") +
+  facet_wrap(~black,ncol = 1,scale = "fixed")+
+  xlab("Wage") +
+  ylab("Density") +
+  scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Other', 'Black')) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Comment**
+
+- The median salary of black people surveyed is lower than the average salary of the rest
+
+- The monthly salary of the non-black group appears to be evenly distributed while the black group has a right skewed distribution.
+
+## 'south' attribute (Qualitative)
+
+- The method is similar to the 2 parts above. 
+
+```{r}
+pie(table(south))
+```
+
+In the survey, people who do not live in the American South (with 0 being the representative number) are more likely than people in the South of the United States (tied with the number 1).
+
+- Plot a box chart showing the salaries of two groups of people living in the south and not living in the south of the US
+
+```{r}
+ggplot(Data, aes(x = wage, y = south, fill = south)) +
+    geom_boxplot() +
+    coord_flip() +
+    ggtitle('Box Plot showing the salaries of two groups of people living in the south and not living in the south of the US') +
+    xlab('Wage') +
+    ylab('Case') +
+    scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Other', 'South')) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+- We also plot the salary histogram of the two objects.
+
+```{r}
+ggplot(Data,aes(x=wage, fill = south)) +
+  geom_histogram(aes(y = ..density..), color = "grey17") +
+  geom_density(alpha = .2, fill = "yellow") +
+  facet_wrap(~south,ncol = 1,scale = "fixed")+
+  xlab("Wage") +
+  ylab("Density") +
+  scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Other', 'South')) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+**Comment**
+
+- The median of wage of people who live in South US lower than who do not live in the South
+
+- The monthly wages of people who do not live in the southern United States appear to be evenly distributed, while those who live in the southern United States have a right-skewed distribution.
+
+# Inferential statistics
+
+## The mean parameter $\mu$ of the quantitative variable
+
+- In this section, we will compare the mean parameter $\mu$ of quantitative variables in different groups of qualitative variables and use the hypothesis testing method to see if the comment is correct or not. The first commented attribute is wage. We will compare the average salary of unmarried people with the average salary of married people. For ease of observation, we can outline a box plot with the boxplot command below:
+
+```{r}
+
+ggplot(Data, aes(x = wage, y = married, fill = married)) +
+    geom_boxplot() +
+    coord_flip() +
+    ggtitle('Box Plot showing the salaries of two groups of married and unmarried') +
+    xlab('Wage') +
+    ylab('Case') +
+    scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Unmarried', 'Married')) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+Looking at the graph above, we can see that the average salary of married people surveyed is higher than the average salary of unmarried people. We will test this hypothesis.
+
+- $H_{0}:$ Average salary of unmarried people is higher than or equal to married people
+
+- $H_{a}:$ Average salary of unmarried people is lower than married people
+
+We use the t.test command to test:
+
+```{r}
+t.test(wage~married, alternative="less")
+```
+
+ We can see that the p-value is very small and much smaller than $\alpha$ = 0.05. Therefore, we reject hypothesis $H_{0}$ that the average salary of unmarried people is higher than or equal to married people.
+
+Next, we'll look at the IQ score of blacks and non-blacks. Similar to the case above, we use the boxplot function to plot the box plot. The command is as below.
+
+```{r}
+
+ggplot(Data, aes(x = IQ, y = black, fill = black)) +
+    geom_boxplot() +
+    coord_flip() +
+    ggtitle('Box Plot the IQ score of blacks and non-blacks') +
+    xlab('IQ score') +
+    ylab('Case') +
+    scale_fill_brewer(palette = 'Blues', name = 'Case',
+                      labels = c('Other', 'Black')) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+According to the graph above, we can see that the average IQ score of black people surveyed is lower than the average IQ score of other people. We will test this hypothesis.
+
+- $H_{0}:$ Average IQ score of non-black people is lower than or equal to black people
+
+- $H_{a}:$ Average IQ score of non-black people is higher than to black people
+
+We use the t.test command to test:
+
+```{r}
+t.test(IQ~black, alternative="greater")
+```
+
+We can see that the p-value is very small and much smaller than $\alpha$ = 0.05. Therefore, we reject hypothesis $H_{0}$ that the average IQ score of non-black people is lower than or equal to black people.
+
+## The ratio p of a property of the qualitative variable
+
+- In this second part, we will compare the ratio p associated with a property of a certain qualitative variable in different groups of qualitative variables and use the hypothesis testing method to see that comment correct or not. First, we will compare the proportion of blacks among those living in the southern United States and the proportion of blacks among those not living in the southern United States. For ease of observation, we can sketch a pie chart with the pie command below.
+
+```{r}
+blackvssouth <- Data %>%
+group_by(south, black) %>%
+summarise(count=n()) %>%
+mutate(prec=count/sum(count))
+
+ggplot(blackvssouth, aes(x="", y= prec, fill=black)) +
+geom_bar(width = 2, stat = "identity") +
+coord_polar("y", start=0) + facet_wrap(~south,ncol = 2,scale =
+"fixed")+
+ggtitle("Proportion of blacks in the south and not in the south of the US")+
+xlab("")+
+ylab("")+
+scale_fill_discrete(labels = c("Other","Black")) 
+```
+
+Based on the graph, we can guess that the proportion of blacks among those living in the American South is higher than the proportion of blacks among those not living in the South. We will test this hypothesis with the command prop.test.
+
+- $H_{0}:$ The proportion of non-blacks among those not living in the south is higher than or equal to that proportion of those living in the south
+
+- $H_{a}:$ The proportion of non-blacks among those not living in the south is smaller than that proportion of those living in the south
+
+```{r}
+prop.test(table(south, black), correc=FALSE, alternative="less")
+```
+
+With p-value = 1, we can say, at all levels of significance, that we cannot reject hypothesis $H_{0}$ that the proportion of blacks among those living in the American South is higher than the proportion of blacks among those not living in the South. 
+
+Moving on, we will compare the proportions of unmarried people among blacks and non-blacks. Similar to the above, we still draw the pie chart.
+
+```{r}
+blackvsmarried <- Data %>%
+group_by(black, married) %>%
+summarise(count=n()) %>%
+mutate(prec=count/sum(count))
+
+ggplot(blackvsmarried, aes(x="", y= prec, fill=married)) +
+geom_bar(width = 2, stat = "identity") +
+coord_polar("y", start=0) + facet_wrap(~black,ncol = 2,scale =
+"fixed")+
+ggtitle("Proportion of unmarried people among blacks and the others")+
+xlab("")+
+ylab("")+
+scale_fill_discrete(labels = c("Unmarried","Married")) 
+```
+
+We can see that the proportion of unmarried people among blacks and non-blacks are almost the same.
+
+- $H_{0}:$ The proportion of unmarried people among blacks and non-blacks are equal.
+
+- $H_{a}:$ The proportion of unmarried people among blacks and non-blacks are different.
+
+We use the function “prop.test” to test
+
+```{r}
+prop.test(table(black, married), correc=FALSE)
+```
+
+We obtain p-value = 0.1022, greater than the significance level $\alpha$ = 0.05. Therefore, we cannot reject hypothesis H0 that the proportion of unmarried people among black and non-black people is equal.
+
+# Simple regression models
+
+## Single regression model estimates average salary from average weekly hours
+
+- We build the regression equation:
+
+$$wage = \beta _{1}  + \beta _{2} \times hours + \varepsilon$$
+- Code:
+
+```{r}
+model1 <- lm(wage~hours)
+model1
+```
+
+- We can conclude the regression equation as:
+
+$$wage = 981.315  - 0.532 \times hours + \varepsilon$$
+
+- Meanings:
+
+  - $\beta _{1}$: when the number of weekly working hours is zero, the salary is 981.315
+  
+  - $\beta _{2}$: when the number of weekly working hours increases by 1, the salary decreased by 0.532
+  
+- Represent the regression equation on the scatter plot using the function "geom_smooth"
+
+```{r}
+ggplot(Data,aes(hours,wage,color = hours))+
+  geom_point(alpha = 1)+
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Monthly working hours") +
+  ylab("Salary")
+
+```
+
+- Test parameters:
+
+```{r}
+summary(model1)
+```
+
+- Comment: With p_value=0.772, the possibility of coefficient $\beta _{2}$ = 0 is high, so the dependence of wage and hours is weak.
+
+- Use the “confint” function to estimate the confidence interval for the regression coefficient.
+
+```{r}
+confint(model1)
+```
+
+So, the confidence interval of the coefficient at 95% significance level for: 
+
+- $\beta _{1}$ is [821.222486,1141.407656]
+
+- $\beta _{2}$ is [-4.128045,3.064082]
+  
+## Single regression model estimates average salary from IQ score
+
+- We build the regression equation:
+
+$$wage = \beta _{1}  + \beta _{2} \times IQ + \varepsilon$$
+- Code:
+
+```{r}
+model2 <- lm(wage~IQ)
+model2
+```
+
+- We can conclude the regression equation as:
+
+$$wage = 116.992  + 8.303 \times IQ + \varepsilon$$
+
+- Meanings:
+
+  - $\beta _{1}$: when the IQ score is zero, the salary is 116.992
+  
+  - $\beta _{2}$: when the IQ score increases by 1, the salary increased by 8.303
+  
+- Represent the regression equation on the scatter plot using the function "geom_smooth"
+
+```{r}
+ggplot(Data,aes(IQ,wage,color = IQ))+
+  geom_point(alpha = 1)+
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("IQ score") +
+  ylab("Salary")
+
+```
+
+- Test parameters:
+
+```{r}
+summary(model2)
+```
+
+- Comment: With p_value < 2e-16, the possibility of coefficient $\beta _{2}$ = 0 is small, so the dependence of wage and IQ is strong
+
+- Use the “confint” function to estimate the confidence interval for the regression coefficient.
+
+```{r}
+confint(model2)
+```
+
+So, the confidence interval of the coefficient at 95% significance level for: 
+
+- $\beta _{1}$ is [-51.080781,285.063910]
+
+- $\beta _{2}$ is [6.661631,9.944498]
+
+## Single regression model estimates average salary from years of work experience
+
+- We build the regression equation:
+
+$$wage = \beta _{1}  + \beta _{2} \times exper + \varepsilon$$
+- Code:
+
+```{r}
+model3 <- lm(wage~exper)
+model3
+```
+
+- We can conclude the regression equation as:
+
+$$wage = 955.6049  + 0.2024 \times exper + \varepsilon$$
+
+- Meanings:
+
+  - $\beta _{1}$: when the years of work experience is zero, the salary is 955.6049
+  
+  - $\beta _{2}$: when the years of work experience increases by 1, the salary increased by 0.2024
+  
+- Represent the regression equation on the scatter plot using the function "geom_smooth"
+
+```{r}
+ggplot(Data,aes(exper,wage,color = exper))+
+  geom_point(alpha = 1)+
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Years of work experience") +
+  ylab("Salary")
+
+```
+
+- Test parameters:
+
+```{r}
+summary(model3)
+```
+
+- Comment: With p_value = 0.947, the possibility of coefficient $\beta _{2}$ = 0 is high, so the dependence of wage and years of work experience is weak
+
+- Use the “confint” function to estimate the confidence interval for the regression coefficient.
+
+```{r}
+confint(model3)
+```
+
+So, the confidence interval of the coefficient at 95% significance level for: 
+
+- $\beta _{1}$ is [882.185279,1029.024598]
+
+- $\beta _{2}$ is [-5.736443,6.141249]
+
+
+# Multiple regression model
+
+Before finding the regression model for the wage attribute according to the attributes hours, IQ, exper, we can draw a graph showing the correlation between the variables using the pair command below.
+
+```{r}
+pairs(wage~hours+IQ+exper)
+```
+
+We set up the following regression model:
+
+$$ wage = \beta _{1} + \beta _{2} \times hours + \beta _{3} \times IQ + \beta _{4} \times exper$$
+
+To find the coefficients we use the lm command as follows:
+
+```{r}
+model <- lm(wage~hours+IQ+exper)
+model
+```
+
+We get the regression model:
+
+$$ wage = 58.121 - 1.629 \times hours + 8.809 \times IQ + 6.852 \times exper$$
+
+Meanings:
+
+- $\beta _{1} = 58.121$, in case all other factors being held constant and independent variables having no effect, the average monthly salary is 58.121
+
+- $\beta _{2} = - 1.629$, in case all other factors being held constant, when the average weekly working hours decreased by 1 hour, the average monthly salary increased by 1.629 USD.
+
+- $\beta _{3} = 8.809$, in case all other factors being held constant, when the IQ score increased by 1 unit, the average monthly salary increased by 8.809
+
+- $\beta _{4} = 6.852$, in case all other factors being held constant, when year of experience increased by 1, the average monthly salary increased by 6.852
+
+To find the 95% confidence intervals for the regression coefficients we have just found, we can use the confint function and pass the model obtained from the lm function above with a confidence level of 0.95. Command details below.
+
+```{r}
+confint(model, level=0.95)
+```
+
+So, the confidence interval of the coefficient:
+
+- $\beta _{1}$ is [-186.106488, 302.349452]
+
+- $\beta _{2}$ is [-5.054493,1.795604]
+
+- $\beta _{3}$ is [7.124947, 10.492463]
+
+- $\beta _{4}$ is [1.063297, 12.641411]
+
+Description of the regression equation:
+
+```{r}
+summary(model)
+```
+
+Comment: p_value2 is large so the possibility of coefficient $\beta _{2}$=0 is possible, then we use the function "anova" to check if the reduction function is suitable or not.
+
+```{r}
+anova(model1,model)
+```
+
+With very small Pr(> F), the probability of rejecting the null hypothesis $\beta _{2}$=0 is relatively low, so it is possible that this value is zero.
+
+**Conclusion of regression model**
+
+After checking the fit of the reduct, we can conclude that the appropriate regression model is:
+
+$$ wage = 58.121 + 8.809 \times IQ + 6.852 \times exper$$
+Comment: when you have a high IQ as well as a lot of work experience, the average monthly salary will increase.

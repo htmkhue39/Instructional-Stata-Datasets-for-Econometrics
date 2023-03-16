@@ -1,0 +1,13 @@
+WAGE2.DES
+
+wage      hours     IQ      exper    married   black     south
+  Obs:   935
+
+  1. wage                     monthly earnings
+  2. hours                    average weekly hours
+  3. IQ                       IQ score
+  4. exper                    years of work experience
+  5. married                  =1 if married
+  6. black                    =1 if black
+  7. south                    =1 if live in south
+
